@@ -1,3 +1,4 @@
+import { Octokit } from '@octokit/rest';
 import { OpenAIChat } from 'langchain/llms/openai';
 import { taskCreationPrompt } from './prompt';
 import { LLMChain } from 'langchain/chains';
@@ -6,9 +7,6 @@ import { getUserApiKey } from '@/utils/settings';
 import { parseTasks } from '@/utils/task';
 import { translate } from '@/utils/translate';
 import axios from 'axios';
-
-// TODO: Only client-side requests are allowed.
-// To use the environment variable API key, the request must be implemented from the server side.
 
 export const taskCreationAgent = async (
   objective: string,
@@ -119,5 +117,85 @@ export const taskCreationAgent = async (
     return null;
   }
 
+  // Integrate with GitHub API for task creation
+  const octokit = new Octokit({ auth: 'YOUR_GITHUB_ACCESS_TOKEN' });
+
+  try {
+    const repoName = 'YOUR_REPO_NAME';
+    const repo = await octokit.repos.get({ owner: 'YOUR_GITHUB_USERNAME', repo: repoName });
+    const workflowFileName = 'YOUR_WORKFLOW_FILENAME'; // Replace with the actual filename of your workflow
+
+    // Add tasks to the workflow file (if needed)
+    const workflowFilePath = `.github/workflows/${workflowFileName}`;
+    const workflowContent = await octokit.repos.getContent({
+      owner: repo.data.owner.login,
+      repo: repoName,
+      path: workflowFilePath,
+    });
+
+    const existingWorkflowContent = Buffer.from(workflowContent.data.content, 'base64').toString();
+
+    // Update the workflow content with the tasks
+    const tasksToAdd = taskList;
+    const updatedWorkflowContent = addTasksToWorkflow(existingWorkflowContent, tasksToAdd);
+
+    // Commit the updated workflow content to the repository
+    await octokit.repos.createOrUpdateFileContents({
+      owner: repo.data.owner.login,
+      repo: repoName,
+      path: workflowFilePath,
+      message: 'Add tasks to workflow',
+      content: Buffer.from(updatedWorkflowContent).toString('base64'),
+      sha: workflowContent.data.sha,
+    });
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      return null;
+    }
+    console.log(error);
+    return null;
+  }
+
   return taskList;
 };
+
+// Helper function to add tasks to the workflow file content
+function addTasksToWorkflow(existingContent: string, tasksToAdd: AgentTask[]) {
+  // Customize this function based on your workflow file format and how tasks should be added
+  // For example, you can use regular expressions to find specific lines and insert tasks there
+  // Or you can parse the YAML content, add tasks to the appropriate section, and then stringify it back to YAML
+  // In this example, I'm simply appending the tasks at the end of the file
+
+  const updatedContent = `${existingContent}\n\n# Added tasks\n`;
+
+  tasksToAdd.forEach((task) => {
+    updatedContent += `# Task: ${task.title}\n`;
+    updatedContent += `# Description: ${task.description}\n`;
+    updatedContent += `# ... (add other relevant task data)\n`;
+    updatedContent += `# End of Task\n\n`;
+  });
+
+  return updatedContent;
+}
+
+// Example usage:
+const existingContent = `
+# Your existing workflow content here
+`;
+
+const tasksToAdd: AgentTask[] = [
+  {
+    title: 'Task 1',
+    description: 'Description of Task 1',
+    // Add other relevant task data
+  },
+  {
+    title: 'Task 2',
+    description: 'Description of Task 2',
+    // Add other relevant task data
+  },
+  // Add more tasks as needed
+];
+
+const updatedContent = addTasksToWorkflow(existingContent, tasksToAdd);
+console.log(updatedContent);
