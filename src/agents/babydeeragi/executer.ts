@@ -98,7 +98,16 @@ export class BabyDeerAGI extends AgentExecuter {
     }
     return taskOutput;
   }
-
+interface AgentTask {
+  id: number;
+  task: string;
+  tool: string;
+  status: 'incomplete' | 'running' | 'complete';
+  output?: string;
+  dependentTaskIds?: number[];
+  config?: any;
+  name: string; // Add the name property here
+}
   async executeTask(task: AgentTask) {
 
   switch(task.name) {
