@@ -99,7 +99,7 @@ export class BabyDeerAGI extends AgentExecuter {
     return taskOutput;
   }
 
-  async executeTask(task) {
+  async executeTask(task: AgentTask) {
 
   switch(task.name) {
 
