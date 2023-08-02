@@ -14,6 +14,21 @@ export const analystPrompt = (results: string, language: string) => {
   Report must be answered in ${language}.
   \n###INFORMATION:${results}.\n###REPORT:`;
 };
+export const gitHubTaskPrompt = (taskName) => {
+
+  return `Generate a GitHub task configuration in the following format:
+
+{
+  "name": "${taskName}",
+  "tool": "github",
+  "config": {
+    
+  }
+}
+
+Configuration: `;
+
+}
 
 export const textCompletionToolPrompt = (
   objective: string,
