@@ -17,8 +17,9 @@ export const AgentCollapsible: FC<AgentCollapsibleProps> = ({
   const [open, setOpen] = React.useState(false);
 
   useEffect(() => {
-    setOpen(isOpen);
-  }, []);
+  setOpen(isOpen);
+}, [isOpen]);
+
 
   return (
     <Collapsible.Root className="w-full" open={open} onOpenChange={setOpen}>
